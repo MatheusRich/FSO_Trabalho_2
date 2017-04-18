@@ -6,21 +6,21 @@
 #include <string.h>
 
 // CITAR QUE ACHEI O BAGUI NO STACK overflow
-long random_number(long max)
+long random_number()
 {
-  unsigned long
-    // max <= RAND_MAX < ULONG_MAX, so this is okay.
-    num_bins = (unsigned long) max + 1,
-    num_rand = (unsigned long) RAND_MAX + 1,
-    bin_size = num_rand / num_bins,
-    defect   = num_rand % num_bins;
-
+  long max = 2;
+  // max <= RAND_MAX < ULONG_MAX, so this is okay.
+  unsigned long num_bins = (unsigned long) max + 1,
+                            num_rand = (unsigned long) RAND_MAX + 1,
+                            bin_size = num_rand / num_bins,
+                            defect   = num_rand % num_bins;
   long x;
-  do {
-   x = random();
-  }
-  // This is carefully written not to overflow
-  while (num_rand - defect <= (unsigned long)x);
+
+  do
+  {
+    x = random();
+    // This is carefully written not to overflow
+  } while (num_rand - defect <= (unsigned long)x);
 
   // Truncated division is intentional
   return x/bin_size;
@@ -90,7 +90,6 @@ int main()
           scanf("%s", str);
 
           // printf("timestamp: %Lf\n", ((long double)(timestamp2-timestamp1))/CLOCKS_PER_SEC);
-          printf("%s\n", str);
           write(fd2[1], str, sizeof(str) + 1);
 
         }
@@ -107,11 +106,10 @@ int main()
         scanf("%s", str);
 
         // printf("timestamp: %Lf\n", ((long double)(timestamp2-timestamp1))/CLOCKS_PER_SEC);
-        printf("%s\n", str);
         write(fd1[1], str, sizeof(str) + 1);
 
         //Mandando o mlk dormir
-        sleep(random_number(2));
+        sleep(random_number());
       }
 
   return 0;
