@@ -11,9 +11,9 @@ long random_number()
   long max = 2;
   // max <= RAND_MAX < ULONG_MAX, so this is okay.
   unsigned long num_bins = (unsigned long) max + 1,
-                            num_rand = (unsigned long) RAND_MAX + 1,
-                            bin_size = num_rand / num_bins,
-                            defect   = num_rand % num_bins;
+  num_rand = (unsigned long) RAND_MAX + 1,
+  bin_size = num_rand / num_bins,
+  defect   = num_rand % num_bins;
   long x;
 
   do
@@ -30,87 +30,67 @@ int main()
 {
   srand((unsigned)time(NULL));
 
-  int fd1[2], fd2[2];
-  pid_t pid,pid2;
-
-  // Conectar pipes nos filhos.
+  int passive_pipe[2], active_pipe[2];
+  pid_t passive_process,active_process;
 
   /* Criando nosso Pipe */
-      if(pipe(fd1)<0)
-      {
-          perror("pipe") ;
-          return -1 ;
-      }
+  pipe(passive_pipe);
+  pipe(active_pipe);
 
-      if(pipe(fd2)<0)
-      {
-          perror("asdf");
-          return -2;
-      }
-      // Criando o processo filho
-      if ((pid = fork()) < 0)
-      {
-        perror("fork");
-        exit(1);
-      }
+  // Criando o processo filho passivo
+  passive_process = fork();
 
-      // Processo pai
-      if(pid>0)
-      {
+  // Processo pai
+  if(passive_process>0)
+  {
+    // Criando o processo filho2
+    active_process = fork();
 
-        // Criando o processo filho2
-        if ((pid2 = fork()) < 0)
-        {
-          perror("fork2");
-          exit(1);
-        }
+    //Aqui é papis
+    if(active_process>0)
+    {
+      // Fechando a porta de escrita
+      close(passive_pipe[1]);
+      close(active_pipe[1]);
 
-        //Aqui é papis
-        if(pid2>0)
-        {
-          // Fechando a porta de escrita
-          close(fd1[1]);
-          close(fd2[1]);
+      char str_recebida[256]="";
 
-          char str_recebida[256]="";
+      read(active_pipe[0], str_recebida, sizeof(str_recebida));
+      printf("%s - Ativo\n", str_recebida);
+      read(passive_pipe[0], str_recebida, sizeof(str_recebida));
+      printf("%s - PASSIVO\n", str_recebida);
 
-          read(fd1[0], str_recebida, sizeof(str_recebida));
+    }
+    else
+    {
+      //Filho Ativo
+      char str[256]="";
 
-          printf("%s - DEU CARAI\n", str_recebida);
-        }
-        else
-        {
-          //filho 2
-          char str[256]="";
+      // Fechando a porta de leitura
+      close(active_pipe[0]);
 
-          // Fechando a porta de leitura
-          close(fd2[0]);
+      printf("Escreve aí filha da puta 2:\n" );
+      scanf("%s", str);
 
-          printf("Escreve aí filha da puta 2:\n" );
-          scanf("%s", str);
+      // printf("timestamp: %Lf\n", ((long double)(timestamp2-timestamp1))/CLOCKS_PER_SEC);
+      write(active_pipe[1], str, sizeof(str) + 1);
 
-          // printf("timestamp: %Lf\n", ((long double)(timestamp2-timestamp1))/CLOCKS_PER_SEC);
-          write(fd2[1], str, sizeof(str) + 1);
+    }
+  }
+  // Processo Filho Passivo
+  else
+  {
+    char str[256]="messaginha";
 
-        }
-      }
-      // Processo Filho 1
-      else
-      {
-        char str[256]="";
+    // Fechando a porta de leitura
+    close(passive_pipe[0]);
 
-        // Fechando a porta de leitura
-        close(fd1[0]);
+    // printf("timestamp: %Lf\n", ((long double)(timestamp2-timestamp1))/CLOCKS_PER_SEC);
+    write(passive_pipe[1], str, sizeof(str) + 1);
 
-        printf("Escreve aí filha da puta:\n" );
-        scanf("%s", str);
-
-        // printf("timestamp: %Lf\n", ((long double)(timestamp2-timestamp1))/CLOCKS_PER_SEC);
-        write(fd1[1], str, sizeof(str) + 1);
-
-        //Mandando o mlk dormir
-        sleep(random_number());
-      }
+    // Mandando o mlk dormir
+    sleep(random_number());
+  }
 
   return 0;
 
