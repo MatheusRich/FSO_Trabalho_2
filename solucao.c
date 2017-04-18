@@ -4,8 +4,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
+#define MAX_RUNNING_TIME 30
 
-// CITAR QUE ACHEI O BAGUI NO STACK overflow
+// This function generates a random number between 0 and max. In this case, max was defined as 2.
+// Addapted from: http://stackoverflow.com/questions/2509679/how-to-generate-a-random-number-from-within-a-range
 long random_number()
 {
   long max = 2;
@@ -25,6 +27,38 @@ long random_number()
   return x/bin_size;
 }
 
+double *dorminhoco(double tempo[], clock_t comeco, clock_t fim)
+{
+  comeco = clock();
+
+  //Código
+
+  fim = clock();
+
+
+  double diff1 =  ((double) (fim - comeco)) / (CLOCKS_PER_SEC);
+  tempo[0] = (int) diff1/60;
+  tempo[1] = (diff1 - tempo[0] * 60);
+  printf("%.0lf:%06.3lf: Mensagem do filho dorminhoco\n", tempo[0] , tempo[1]);
+
+  return tempo;
+}
+
+void write_to_file(int passive_pipe[], clock_t parent_initial_time)
+{
+
+}
+
+void receive_messages(int passive_pipe[],int active_pipe[], clock_t parent_initial_time)
+{
+
+  close(passive_pipe[1]);
+  close(active_pipe[1]);
+
+    write_to_file(passive_pipe, parent_initial_time);
+    write_to_file(active_pipe, parent_initial_time);
+}
+
 int main()
 {
   srand((unsigned)time(NULL));
@@ -36,58 +70,44 @@ int main()
   pipe(passive_pipe);
   pipe(active_pipe);
 
-  // Criando o processo filho passivo
+  // Creating passive child process
   passive_process = fork();
 
-  // Processo pai
+  // Parent Process
   if(passive_process>0)
   {
-    // Criando o processo filho2
+    // Creating active child process
     active_process = fork();
 
-    //Processo Pai
     if(active_process>0)
     {
-      // Fechando a porta de escrita
-      close(passive_pipe[1]);
-      close(active_pipe[1]);
+      // Parent Process
+      clock_t parent_initial_time = clock();
+      clock_t parent_current_time = clock();
+      double parent_running_time = -1;
 
-      char str_recebida[256]="";
+      while(parent_running_time < MAX_RUNNING_TIME)
+      {
+        // Reading messagens from children
+        receive_messages(passive_pipe,active_pipe, parent_initial_time);
 
-      read(active_pipe[0], str_recebida, sizeof(str_recebida));
-      printf("%s - ATIVO\n", str_recebida);
-      read(passive_pipe[0], str_recebida, sizeof(str_recebida));
-      printf("%s - PASSIVO\n", str_recebida);
-
+        // Calculating parent running time
+        parent_current_time = clock();
+        parent_running_time = (double)(parent_current_time - parent_initial_time)/CLOCKS_PER_SEC;
+      }
     }
     else
     {
-      //Filho Ativo
-      char str[256]="";
+      //Active Child Process
 
-      // Fechando a porta de leitura
-      close(active_pipe[0]);
-
-      printf("Escreve aí filha da puta 2:\n" );
-      scanf("%s", str);
-
-      // printf("timestamp: %Lf\n", ((long double)(timestamp2-timestamp1))/CLOCKS_PER_SEC);
-      write(active_pipe[1], str, sizeof(str) + 1);
-
+      printf("So fi bom\n");
     }
   }
-  // Processo Filho Passivo
   else
   {
-    char str[256]="messaginha";
-
-    // Fechando a porta de leitura
-    close(passive_pipe[0]);
-
-    // printf("timestamp: %Lf\n", ((long double)(timestamp2-timestamp1))/CLOCKS_PER_SEC);
-    write(passive_pipe[1], str, sizeof(str) + 1);
-
-    // Mandando o mlk dormir
+    // Passive Child Process
+    printf("So fi preguiça\n");
+    // Sleeping
     sleep(random_number());
   }
 
