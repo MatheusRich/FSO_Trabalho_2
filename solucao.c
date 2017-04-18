@@ -11,16 +11,15 @@ long random_number()
   long max = 2;
   // max <= RAND_MAX < ULONG_MAX, so this is okay.
   unsigned long num_bins = (unsigned long) max + 1,
-  num_rand = (unsigned long) RAND_MAX + 1,
-  bin_size = num_rand / num_bins,
-  defect   = num_rand % num_bins;
+                            num_rand = (unsigned long) RAND_MAX + 1,
+                            bin_size = num_rand / num_bins,
+                            defect   = num_rand % num_bins;
   long x;
 
   do
   {
     x = random();
-    // This is carefully written not to overflow
-  } while (num_rand - defect <= (unsigned long)x);
+  } while (num_rand - defect <= (unsigned long)x); // This is carefully written not to overflow
 
   // Truncated division is intentional
   return x/bin_size;
@@ -33,7 +32,7 @@ int main()
   int passive_pipe[2], active_pipe[2];
   pid_t passive_process,active_process;
 
-  /* Criando nosso Pipe */
+  // Creating pipes
   pipe(passive_pipe);
   pipe(active_pipe);
 
@@ -46,7 +45,7 @@ int main()
     // Criando o processo filho2
     active_process = fork();
 
-    //Aqui é papis
+    //Processo Pai
     if(active_process>0)
     {
       // Fechando a porta de escrita
@@ -56,7 +55,7 @@ int main()
       char str_recebida[256]="";
 
       read(active_pipe[0], str_recebida, sizeof(str_recebida));
-      printf("%s - Ativo\n", str_recebida);
+      printf("%s - ATIVO\n", str_recebida);
       read(passive_pipe[0], str_recebida, sizeof(str_recebida));
       printf("%s - PASSIVO\n", str_recebida);
 
