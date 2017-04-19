@@ -40,14 +40,6 @@ void clean_output()
   remove("output.txt");
 }
 
-int is_ready(int ready, fd_set set, struct timeval timeout)
-{
-  if (select(FD_SETSIZE, &set, NULL, NULL, &timeout))
-    return TRUE;
-
-  return FALSE;
-}
-
 // Formats the struct timeval to the required style.
 void timestamp(struct timeval initial_time, struct timeval end, double min_sec[])
 {
@@ -71,6 +63,7 @@ void write_to_file(int pipe[], struct timeval parent_initial_time)
 
   fd_set set;
   struct timeval timeout;
+	int ready = -1;
 
   FD_ZERO(&set);
   FD_SET(pipe[0], &set);
@@ -78,10 +71,9 @@ void write_to_file(int pipe[], struct timeval parent_initial_time)
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
 
-  int ready = -1;
-  is_ready(ready, set, timeout);
+	ready = select(FD_SETSIZE, &set, NULL, NULL, &timeout);
 
-  // If the file descripor has activity
+	// If the file descripor has activity
   if (ready)
   {
           // Open pipe stream read end
@@ -116,8 +108,8 @@ void receive_messages(int passive_pipe[],int active_pipe[], struct timeval paren
 
 	while(parent_running_time < MAX_RUNNING_TIME)
 	{
-		write_to_file(passive_pipe, parent_initial_time);
 		write_to_file(active_pipe, parent_initial_time);
+		write_to_file(passive_pipe, parent_initial_time);
 
 		// Calculating parent running time
 		gettimeofday(&parent_current_time, NULL);
