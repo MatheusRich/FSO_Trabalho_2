@@ -168,31 +168,31 @@ int main()
     }
     else      //Active Child Process
     {
-
 			char keyboard_mes[100];
+			struct timeval initial_time, end_time;
+			double time_sec_mili[2];
+			int message_id = 1; // Index of messages
 
-      //Get current local time to compute timestamp
-      struct timeval initial_time, end_time;
-      double time_sec_mili[2];
-      gettimeofday(&initial_time, NULL); // get intial time
+      gettimeofday(&initial_time, NULL);
 
-      // Index of messages
-      int message_id = 1;
-
-      while (1)
+      while (TRUE)
       {
-				printf("Digite uma menssagem: \n");
-        scanf("%s", keyboard_mes);
+				// Getting the user message
+				printf("Digite uma mensagem: \n");
+				fgets(keyboard_mes, 100, stdin);
 
+				// Excluding the \n at the string end
+				keyboard_mes[strlen(keyboard_mes)-1]= '\0';
+
+				// Assembling the string
         char final_string[120] = "do usuario: <";
         strcat(final_string, keyboard_mes);
         strcat(final_string, ">");
 
-        gettimeofday(&end_time, NULL);
-
+				gettimeofday(&end_time, NULL);
         timestamp(initial_time, end_time, time_sec_mili);
-
         sendmessage(active_pipe, message_id, time_sec_mili, final_string);
+
         message_id++;
       }
     }
