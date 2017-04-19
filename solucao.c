@@ -8,7 +8,7 @@
 #include <signal.h>
 #define TRUE 1
 #define FALSE 0
-#define MAX_RUNNING_TIME 3
+#define MAX_RUNNING_TIME 30
 
 // This function generates a random number between 0 and max. In this case, max was defined as 2.
 // Addapted from available: http://stackoverflow.com/questions/2509679/how-to-generate-a-random-number-from-within-a-range
@@ -38,6 +38,11 @@ long random_number()
   random_num = rand()%3;
 
   return random_num;
+}
+
+void clean_output()
+{
+  remove("output.txt");
 }
 
 void formatTimestamp(struct timeval start, struct timeval end, double times[]){
@@ -73,6 +78,7 @@ void write_to_file(int pipe[], struct timeval parent_initial_time)
 {
 
   // Creating an output file if it does not exist. Else, append it.
+  // clean_output();
   FILE *output = fopen("output.txt", "a");
 
   if(output == NULL)
@@ -92,9 +98,10 @@ void write_to_file(int pipe[], struct timeval parent_initial_time)
 
   int ready = -1;
   is_ready(ready, set, timeout);
-
+  // int result = select(FD_SETSIZE, &set, NULL, NULL, &timeout);
   // If the file descripor has activity
   if (ready)
+  // if(result>0)
   {
           // Open pipe stream read end
           FILE* stream;
@@ -105,23 +112,11 @@ void write_to_file(int pipe[], struct timeval parent_initial_time)
           double time_sec_mili[2];
           if ((fgets (buffer, sizeof(buffer), stream) != NULL))
           {
-              printf("sim\n");
               struct timeval child_end_time;
               gettimeofday(&child_end_time, NULL);
               timestamp(parent_initial_time, child_end_time, time_sec_mili);
               fprintf(output, "%.0lf:%06.3lf: %s", time_sec_mili[0], time_sec_mili[1], buffer);
-              printf("%.0lf:%06.3lf: %s", time_sec_mili[0], time_sec_mili[1], buffer);
           }
-          else{
-
-            perror("vai cagar véi...");
-            exit(-1);
-          }
-    }
-    else
-    {
-      printf("nãããao\n");
-      fprintf(output, "DEU RUIM PORRA\n");
     }
 
   fclose(output);
@@ -143,19 +138,20 @@ void sendmessage(int *pipe, int message_id, double *time_sec_mili, const char* m
   FILE *final_message;
   close(pipe[0]);
 
-  printf("%.0lf:%06.3lf: Mensagem %d %s\n", time_sec_mili[0], time_sec_mili[1], message_id, message);
-  final_message = fdopen(pipe[0],"w");
+  // printf("%.0lf:%06.3lf: Mensagem %d %s\n", time_sec_mili[0], time_sec_mili[1], message_id, message);
+  final_message = fdopen(pipe[1],"w");
   fprintf(final_message, "%.0lf:%06.3lf: Mensagem %d %s\n", time_sec_mili[0], time_sec_mili[1], message_id, message);
+
   fflush(final_message);
 }
 
 int main()
 {
+  clean_output();
   srand((unsigned)time(NULL));
 
   int passive_pipe[2], active_pipe[2];
   pid_t passive_process,active_process;
-
   // Creating pipes
   pipe(passive_pipe);
   pipe(active_pipe);
