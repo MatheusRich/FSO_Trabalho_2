@@ -8,7 +8,7 @@
 #include <signal.h>
 #define TRUE 1
 #define FALSE 0
-#define MAX_RUNNING_TIME 4
+#define MAX_RUNNING_TIME 30
 
 int random_number()
 {
@@ -132,7 +132,8 @@ int main()
 
   int passive_pipe[2], active_pipe[2];
   pid_t passive_process,active_process;
-  // Creating pipes
+
+	// Creating pipes
   pipe(passive_pipe);
   pipe(active_pipe);
 
