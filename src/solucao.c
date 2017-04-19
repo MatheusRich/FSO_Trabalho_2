@@ -8,7 +8,7 @@
 #include <signal.h>
 #define TRUE 1
 #define FALSE 0
-#define MAX_RUNNING_TIME 30
+#define MAX_RUNNING_TIME 10
 
 int random_number()
 {
@@ -93,9 +93,10 @@ void write_to_file(int pipe[], struct timeval parent_initial_time)
           double time_sec_mili[2];
           if ((fgets (buffer, sizeof(buffer), stream) != NULL))
           {
-              struct timeval child_end_time;
-              gettimeofday(&child_end_time, NULL);
-              timestamp(parent_initial_time, child_end_time, time_sec_mili);
+              struct timeval parent_end_time;
+              gettimeofday(&parent_end_time, NULL);
+              timestamp(parent_initial_time, parent_end_time, time_sec_mili);
+              // fprintf(output, "%.0lf:%08.5lf: %s", time_sec_mili[0], time_sec_mili[1], buffer);
               fprintf(output, "%.0lf:%06.3lf: %s", time_sec_mili[0], time_sec_mili[1], buffer);
           }
     }
@@ -109,8 +110,19 @@ void receive_messages(int passive_pipe[],int active_pipe[], struct timeval paren
 	close(active_pipe[1]);
   close(passive_pipe[1]);
 
-	write_to_file(active_pipe, parent_initial_time);
-  write_to_file(passive_pipe, parent_initial_time);
+	struct timeval parent_current_time;
+	gettimeofday(&parent_current_time, NULL);
+	double parent_running_time = -1;
+
+	while(parent_running_time < MAX_RUNNING_TIME)
+	{
+		write_to_file(passive_pipe, parent_initial_time);
+		write_to_file(active_pipe, parent_initial_time);
+
+		// Calculating parent running time
+		gettimeofday(&parent_current_time, NULL);
+		parent_running_time = ((parent_current_time.tv_sec + (parent_current_time.tv_usec/1000000u)) - (parent_initial_time.tv_sec + (parent_initial_time.tv_usec/1000000u)));
+	}
 }
 
 // Sends a message from the child processes to the parent.
@@ -120,6 +132,7 @@ void sendmessage(int *pipe, int message_id, double *time_sec_mili, const char* m
   close(pipe[0]);
 
   final_message = fdopen(pipe[1],"w");
+  // fprintf(final_message, "%.0lf:%08.5lf: Mensagem %d %s\n", time_sec_mili[0], time_sec_mili[1], message_id, message);
   fprintf(final_message, "%.0lf:%06.3lf: Mensagem %d %s\n", time_sec_mili[0], time_sec_mili[1], message_id, message);
 
   fflush(final_message);
@@ -151,29 +164,20 @@ int main()
       // Parent Process
       struct timeval parent_initial_time;
       gettimeofday(&parent_initial_time, NULL);
-      struct timeval parent_current_time;
-      gettimeofday(&parent_current_time, NULL);
-      double parent_running_time = -1;
 
-      while(parent_running_time < MAX_RUNNING_TIME)
-      {
-        // Reading messagens from children
-        receive_messages(passive_pipe,active_pipe, parent_initial_time);
-
-        // Calculating parent running time
-        gettimeofday(&parent_current_time, NULL);
-        parent_running_time = ((parent_current_time.tv_sec + (parent_current_time.tv_usec/1000000u)) - (parent_initial_time.tv_sec + (parent_initial_time.tv_usec/1000000u)));
-      }
+      // Reading messagens from children
+      receive_messages(passive_pipe,active_pipe, parent_initial_time);
 
       // Killing child processes
+			printf("\nATENCAO: Tempo excedido! Finalizando o programa!\n");
+			sleep(1);
       kill(passive_process, SIGKILL);
       kill(active_process, SIGKILL);
     }
-    else
+    else      //Active Child Process
     {
-      //Active Child Process
-			char keyboard_mes[50];
 
+			char keyboard_mes[100];
 
       //Get current local time to compute timestamp
       struct timeval initial_time, end_time;
@@ -185,10 +189,10 @@ int main()
 
       while (1)
       {
-				printf("Entre com as menssagens: \n");
+				printf("Digite uma menssagem: \n");
         scanf("%s", keyboard_mes);
 
-        char final_string[80] = "do usuario: <";
+        char final_string[120] = "do usuario: <";
         strcat(final_string, keyboard_mes);
         strcat(final_string, ">");
 
@@ -201,9 +205,8 @@ int main()
       }
     }
   }
-  else
+  else     // Passive Child Process
   {
-    // Passive Child Process
     struct timeval initial_time, end_time;
     double time_sec_mili[2];
     char passive_message[] = {"do filho dorminhoco"};
