@@ -41,16 +41,17 @@ void clean_output()
 }
 
 // Formats the struct timeval to the required style.
-void timestamp(struct timeval initial_time, struct timeval end, double min_sec[])
+void timestamp(struct timeval initial_time, struct timeval end, double *min_sec)
 {
-  double elapsed_time = ((end.tv_sec  - initial_time.tv_sec) * 1000000u + end.tv_usec - initial_time.tv_usec) / 1.e6;
+  double aux = ((end.tv_sec  - initial_time.tv_sec) * 1000000u + end.tv_usec - initial_time.tv_usec);
+	double elapsed_time = aux / 1000000.0;
 
-  min_sec[0] = (int) elapsed_time/60; // Getting minut
+  min_sec[0] = (int) elapsed_time/60; // Getting minute
 	min_sec[1] = (elapsed_time - min_sec[0] * 60); // Getting seconds
 }
 
 /*##############################################################################################################*/
-void write_to_file(int pipe[], struct timeval parent_initial_time)
+void write_to_file(int *pipe, struct timeval parent_initial_time)
 {
   // Creating an output file if it does not exist. Else, append it.
   FILE *output = fopen("doc/output.txt", "a");
@@ -58,7 +59,7 @@ void write_to_file(int pipe[], struct timeval parent_initial_time)
   if(output == NULL)
   {
     printf("ERROR: File could not be opened!\n");
-    exit(1);
+    exit(-1);
   }
 
   fd_set set;
@@ -76,27 +77,26 @@ void write_to_file(int pipe[], struct timeval parent_initial_time)
 	// If the file descripor has activity
   if (ready)
   {
-          // Open pipe stream read end
           FILE* stream;
           stream = fdopen (pipe[0], "r");
 
-          //Ready file and print to output
-          char buffer[1024];
+          char final_message[500];
           double time_sec_mili[2];
-          if ((fgets (buffer, sizeof(buffer), stream) != NULL))
+
+          if ((fgets (final_message, sizeof(final_message), stream) != NULL))
           {
               struct timeval parent_end_time;
+
               gettimeofday(&parent_end_time, NULL);
               timestamp(parent_initial_time, parent_end_time, time_sec_mili);
-              // fprintf(output, "%.0lf:%08.5lf: %s", time_sec_mili[0], time_sec_mili[1], buffer);
-              fprintf(output, "%.0lf:%06.3lf: %s", time_sec_mili[0], time_sec_mili[1], buffer);
+
+							fprintf(output, "%.0lf:%06.3lf: %s", time_sec_mili[0], time_sec_mili[1], final_message);
           }
     }
-
   fclose(output);
 }
 
-void receive_messages(int passive_pipe[],int active_pipe[], struct timeval parent_initial_time)
+void receive_messages(int *passive_pipe,int *active_pipe, struct timeval parent_initial_time)
 {
   // Closing write end of stream.
 	close(active_pipe[1]);
@@ -124,11 +124,13 @@ void sendmessage(int *pipe, int message_id, double *time_sec_mili, const char* m
   close(pipe[0]);
 
   final_message = fdopen(pipe[1],"w");
-  // fprintf(final_message, "%.0lf:%08.5lf: Mensagem %d %s\n", time_sec_mili[0], time_sec_mili[1], message_id, message);
-  fprintf(final_message, "%.0lf:%06.3lf: Mensagem %d %s\n", time_sec_mili[0], time_sec_mili[1], message_id, message);
+
+  fprintf(final_message, "%.0lf:%06.3lf: Mensagem %d do %s\n", time_sec_mili[0], time_sec_mili[1], message_id, message);
 
   fflush(final_message);
 }
+
+
 
 int main()
 {
@@ -185,7 +187,7 @@ int main()
 				keyboard_mes[strlen(keyboard_mes)-1]= '\0';
 
 				// Assembling the string
-        char final_string[120] = "do usuario: <";
+        char final_string[120] = "usuario: <";
         strcat(final_string, keyboard_mes);
         strcat(final_string, ">");
 
@@ -201,12 +203,12 @@ int main()
   {
     struct timeval initial_time, end_time;
     double time_sec_mili[2];
-    char passive_message[] = {"do filho dorminhoco"};
+    char passive_message[] = {"filho dorminhoco"};
     int message_id = 1; // Index of messages
 
     gettimeofday(&initial_time, NULL);
 
-    while (1)
+    while (TRUE)
     {
       gettimeofday(&end_time, NULL);
       timestamp(initial_time, end_time, time_sec_mili);
