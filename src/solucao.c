@@ -48,7 +48,7 @@ int is_ready(int ready, fd_set set, struct timeval timeout)
   return FALSE;
 }
 
-/*############################################################################################################## MUDAR*/
+/*##############################################################################################################*/
 // Formats the struct timeval to the required style.
 void timestamp(struct timeval start, struct timeval end, double times[])
 {
@@ -58,12 +58,10 @@ void timestamp(struct timeval start, struct timeval end, double times[])
   times[1] = (cpuTimeUsed - times[0] * 60);
 }
 
-/*############################################################################################################## MUDAR*/
+/*##############################################################################################################*/
 void write_to_file(int pipe[], struct timeval parent_initial_time)
 {
-
   // Creating an output file if it does not exist. Else, append it.
-  // clean_output();
   FILE *output = fopen("output.txt", "a");
 
   if(output == NULL)
@@ -82,11 +80,10 @@ void write_to_file(int pipe[], struct timeval parent_initial_time)
   timeout.tv_usec = 0;
 
   int ready = -1;
-  FD_SET(ready, set, timeout);
-  // int result = select(FD_SETSIZE, &set, NULL, NULL, &timeout);
+  is_ready(ready, set, timeout);
+
   // If the file descripor has activity
   if (ready)
-  // if(result>0)
   {
           // Open pipe stream read end
           FILE* stream;
@@ -200,5 +197,4 @@ int main()
   }
 
   return 0;
-
 }
