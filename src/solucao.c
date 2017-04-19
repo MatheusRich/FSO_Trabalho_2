@@ -10,34 +10,29 @@
 #define FALSE 0
 #define MAX_RUNNING_TIME 30
 
-// This function generates a random number between 0 and max. In this case, max was defined as 2.
-// Addapted from available: http://stackoverflow.com/questions/2509679/how-to-generate-a-random-number-from-within-a-range
-// long random_number()
-// {
-//   long max = 2;
-//   // max <= RAND_MAX < ULONG_MAX, so this is okay.
-//   unsigned long num_bins = (unsigned long) max + 1,
-//                             num_rand = (unsigned long) RAND_MAX + 1,
-//                             bin_size = num_rand / num_bins,
-//                             defect   = num_rand % num_bins;
-//   long x;
-//
-//   do
-//   {
-//     x = random();
-//   } while (num_rand - defect <= (unsigned long)x); // This is carefully written not to overflow
-//
-//   // Truncated division is intentional
-//   return x/bin_size;
-// }
-
-long random_number()
+int random_number()
 {
-  int random_num = -1;
+	long randomNumber, max;
 
-  random_num = rand()%3;
+	max = RAND_MAX - (RAND_MAX % 3);
 
-  return random_num;
+	do
+  {
+		randomNumber = rand();
+	} while(randomNumber >= max);
+
+	if(randomNumber < (max/3))
+  {
+		return 0;
+	}
+  else if(randomNumber < 2 * (max/3))
+  {
+		return 1;
+	}
+  else
+  {
+		return 2;
+	}
 }
 
 void clean_output()
@@ -45,27 +40,16 @@ void clean_output()
   remove("output.txt");
 }
 
-void formatTimestamp(struct timeval start, struct timeval end, double times[]){
-  //times[0] = minutes
-  //times[1] = seconds.miliseconds
-  double cpuTimeUsed = ((end.tv_sec  - start.tv_sec) * 1000000u + end.tv_usec - start.tv_usec) / 1.e6;
-
-  times[0] = (int) cpuTimeUsed/60;
-  times[1] = (cpuTimeUsed - times[0] * 60);
-}
-
 int is_ready(int ready, fd_set set, struct timeval timeout)
 {
-
   if (select(FD_SETSIZE, &set, NULL, NULL, &timeout))
     return TRUE;
 
   return FALSE;
 }
 
+/*############################################################################################################## MUDAR*/
 // Formats the struct timeval to the required style.
-//times[0] = minutes
-//times[1] = seconds.miliseconds
 void timestamp(struct timeval start, struct timeval end, double times[])
 {
   double cpuTimeUsed = ((end.tv_sec  - start.tv_sec) * 1000000u + end.tv_usec - start.tv_usec) / 1.e6;
@@ -74,6 +58,7 @@ void timestamp(struct timeval start, struct timeval end, double times[])
   times[1] = (cpuTimeUsed - times[0] * 60);
 }
 
+/*############################################################################################################## MUDAR*/
 void write_to_file(int pipe[], struct timeval parent_initial_time)
 {
 
@@ -198,20 +183,20 @@ int main()
     // Passive Child Process
     struct timeval initial_time, end_time;
     double time_sec_mili[2];
+    char passive_message[] = {"do filho dorminhoco"};
+    int message_id = 1; // Index of messages
 
     gettimeofday(&initial_time, NULL);
 
-    // Index of messages
-    int message_id = 1;
-    // Sleeping
     while (1)
     {
-      sleep(random_number());
       gettimeofday(&end_time, NULL);
-
       timestamp(initial_time, end_time, time_sec_mili);
-      sendmessage(passive_pipe, message_id, time_sec_mili, "do filho dorminhoco");
+      sendmessage(passive_pipe, message_id, time_sec_mili, passive_message);
       message_id++;
+
+      // Sleeping 0-2 seconds
+      sleep(random_number());
     }
   }
 
