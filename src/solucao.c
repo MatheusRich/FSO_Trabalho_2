@@ -82,7 +82,7 @@ void write_to_file(int pipe[], struct timeval parent_initial_time)
   timeout.tv_usec = 0;
 
   int ready = -1;
-  is_ready(ready, set, timeout);
+  FD_SET(ready, set, timeout);
   // int result = select(FD_SETSIZE, &set, NULL, NULL, &timeout);
   // If the file descripor has activity
   if (ready)
@@ -123,7 +123,6 @@ void sendmessage(int *pipe, int message_id, double *time_sec_mili, const char* m
   FILE *final_message;
   close(pipe[0]);
 
-  // printf("%.0lf:%06.3lf: Mensagem %d %s\n", time_sec_mili[0], time_sec_mili[1], message_id, message);
   final_message = fdopen(pipe[1],"w");
   fprintf(final_message, "%.0lf:%06.3lf: Mensagem %d %s\n", time_sec_mili[0], time_sec_mili[1], message_id, message);
 

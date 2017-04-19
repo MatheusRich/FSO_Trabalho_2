@@ -17,6 +17,7 @@ obj/%.o: src/%.c
 clean:
 	rm -rf obj/*
 	rm -rf bin/*
+	rm -rf *.txt
 
 run:
 		bin/binary
