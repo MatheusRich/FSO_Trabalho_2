@@ -8,7 +8,7 @@
 #include <signal.h>
 #define TRUE 1
 #define FALSE 0
-#define MAX_RUNNING_TIME 30
+#define MAX_RUNNING_TIME 4
 
 int random_number()
 {
@@ -48,14 +48,13 @@ int is_ready(int ready, fd_set set, struct timeval timeout)
   return FALSE;
 }
 
-/*##############################################################################################################*/
 // Formats the struct timeval to the required style.
-void timestamp(struct timeval start, struct timeval end, double times[])
+void timestamp(struct timeval initial_time, struct timeval end, double min_sec[])
 {
-  double cpuTimeUsed = ((end.tv_sec  - start.tv_sec) * 1000000u + end.tv_usec - start.tv_usec) / 1.e6;
+  double elapsed_time = ((end.tv_sec  - initial_time.tv_sec) * 1000000u + end.tv_usec - initial_time.tv_usec) / 1.e6;
 
-  times[0] = (int) cpuTimeUsed/60;
-  times[1] = (cpuTimeUsed - times[0] * 60);
+  min_sec[0] = (int) elapsed_time/60; // Getting minut
+	min_sec[1] = (elapsed_time - min_sec[0] * 60); // Getting seconds
 }
 
 /*##############################################################################################################*/
@@ -107,11 +106,11 @@ void write_to_file(int pipe[], struct timeval parent_initial_time)
 void receive_messages(int passive_pipe[],int active_pipe[], struct timeval parent_initial_time)
 {
   // Closing write end of stream.
+	close(active_pipe[1]);
   close(passive_pipe[1]);
-  close(active_pipe[1]);
 
+	write_to_file(active_pipe, parent_initial_time);
   write_to_file(passive_pipe, parent_initial_time);
-  // write_to_file(active_pipe, parent_initial_time);
 }
 
 // Sends a message from the child processes to the parent.
@@ -172,6 +171,33 @@ int main()
     else
     {
       //Active Child Process
+			char keyboard_mes[50];
+
+
+      //Get current local time to compute timestamp
+      struct timeval initial_time, end_time;
+      double time_sec_mili[2];
+      gettimeofday(&initial_time, NULL); // get intial time
+
+      // Index of messages
+      int message_id = 1;
+
+      while (1)
+      {
+				printf("Entre com as menssagens: \n");
+        scanf("%s", keyboard_mes);
+
+        char final_string[80] = "do usuario: <";
+        strcat(final_string, keyboard_mes);
+        strcat(final_string, ">");
+
+        gettimeofday(&end_time, NULL);
+
+        timestamp(initial_time, end_time, time_sec_mili);
+
+        sendmessage(active_pipe, message_id, time_sec_mili, final_string);
+        message_id++;
+      }
     }
   }
   else
