@@ -128,8 +128,8 @@ void receive_messages(int passive_pipe[],int active_pipe[], struct timeval paren
   close(passive_pipe[1]);
   close(active_pipe[1]);
 
+  write_to_file(active_pipe, parent_initial_time);
   write_to_file(passive_pipe, parent_initial_time);
-  // write_to_file(active_pipe, parent_initial_time);
 }
 
 // Sends a message from the child processes to the parent.
@@ -191,8 +191,37 @@ int main()
     else
     {
       //Active Child Process
-    }
+      char keyboard_mes[50];
+
+      printf("Entre com as menssagens: \n");
+
+      //Get current local time to compute timestamp
+      struct timeval initial_time, end_time;
+      double time_sec_mili[2];
+      gettimeofday(&initial_time, NULL); // get intial time
+
+      // Index of messages
+      int message_id = 1;
+
+      while (1)
+      {
+        scanf("%s", keyboard_mes);
+
+        char final_string[80] = "do usuario: <";
+        strcat(final_string, keyboard_mes);
+        strcat(final_string, ">");
+
+        gettimeofday(&end_time, NULL); // get end of each messagem
+
+        timestamp(initial_time, end_time, time_sec_mili);
+
+        sendmessage(active_pipe, message_id, time_sec_mili, final_string);
+        //printf("%s\n", final_string);
+        //write_to_file(pipe, userMessage, i, times);
+        message_id++;
+      }
   }
+}
   else
   {
     // Passive Child Process
