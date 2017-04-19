@@ -37,7 +37,7 @@ int random_number()
 
 void clean_output()
 {
-  remove("output.txt");
+  remove("doc/output.txt");
 }
 
 // Formats the struct timeval to the required style.
@@ -53,7 +53,7 @@ void timestamp(struct timeval initial_time, struct timeval end, double min_sec[]
 void write_to_file(int pipe[], struct timeval parent_initial_time)
 {
   // Creating an output file if it does not exist. Else, append it.
-  FILE *output = fopen("output.txt", "a");
+  FILE *output = fopen("doc/output.txt", "a");
 
   if(output == NULL)
   {
