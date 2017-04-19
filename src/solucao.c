@@ -8,7 +8,7 @@
 #include <signal.h>
 #define TRUE 1
 #define FALSE 0
-#define MAX_RUNNING_TIME 10
+#define MAX_RUNNING_TIME 30
 
 int random_number()
 {
