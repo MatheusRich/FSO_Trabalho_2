@@ -50,7 +50,7 @@ void timestamp(struct timeval initial_time, struct timeval end, double *min_sec)
 	min_sec[1] = (elapsed_time - min_sec[0] * 60); // Getting seconds
 }
 
-/*##############################################################################################################*/
+
 void write_to_file(int *pipe, struct timeval parent_initial_time)
 {
   // Creating an output file if it does not exist. Else, append it.
@@ -62,17 +62,17 @@ void write_to_file(int *pipe, struct timeval parent_initial_time)
     exit(-1);
   }
 
-  fd_set set;
-  struct timeval timeout;
+  fd_set file_descriptor_set;
+  struct timeval check_time;
 	int ready = -1;
 
-  FD_ZERO(&set);
-  FD_SET(pipe[0], &set);
+  FD_ZERO(&file_descriptor_set);
+  FD_SET(pipe[0], &file_descriptor_set);
 
-  timeout.tv_sec = 0;
-  timeout.tv_usec = 0;
+  check_time.tv_sec = 0;
+  check_time.tv_usec = 0;
 
-	ready = select(FD_SETSIZE, &set, NULL, NULL, &timeout);
+	ready = select(FD_SETSIZE, &file_descriptor_set, NULL, NULL, &check_time);
 
 	// If the file descripor has activity
   if (ready)
